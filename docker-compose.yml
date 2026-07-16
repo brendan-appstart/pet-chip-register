@@ -1,0 +1,29 @@
+# Minimal self-hosted deployment. A single container with an on-disk libSQL
+# database persisted in a named volume. For a hosted/replicated database, point
+# DATABASE_URL at a Turso URL and drop the volume.
+services:
+  app:
+    build: .
+    ports:
+      - '3000:3000'
+    environment:
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      DATABASE_URL: file:/app/var/registry.db
+      # REQUIRED: generate 32-byte base64 keys and set them here (or via secrets).
+      # These MUST be kept safe and backed up SEPARATELY from the database volume.
+      OPR_KEK_ACTIVE_ID: ${OPR_KEK_ACTIVE_ID:?set OPR_KEK_ACTIVE_ID}
+      OPR_KEK_k1: ${OPR_KEK_k1:?set OPR_KEK_k1 (base64 32 bytes)}
+      OPR_INDEX_KEY: ${OPR_INDEX_KEY:?set OPR_INDEX_KEY (base64 32 bytes)}
+      # Email (production): set EMAIL_PROVIDER=smtp with any SMTP host.
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-console}
+      EMAIL_FROM: ${EMAIL_FROM:-Open Pet Registry <no-reply@example.org>}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      NODE_ENV: production
+    volumes:
+      - registry-data:/app/var
+
+volumes:
+  registry-data:

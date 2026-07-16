@@ -1,0 +1,67 @@
+{
+  "root": true,
+  "extends": ["next/core-web-vitals"],
+  "plugins": ["boundaries"],
+  "settings": {
+    "import/resolver": {
+      "typescript": {
+        "project": "./tsconfig.json"
+      }
+    },
+    "boundaries/include": ["src/**/*"],
+    "boundaries/elements": [
+      { "type": "app", "pattern": "src/app/**" },
+      { "type": "services", "pattern": "src/services/**" },
+      { "type": "domain", "pattern": "src/domain/**" },
+      { "type": "db", "pattern": "src/db/**" },
+      { "type": "providers", "pattern": "src/providers/**" },
+      { "type": "crypto", "pattern": "src/crypto/**" },
+      { "type": "security", "pattern": "src/security/**" },
+      { "type": "config", "pattern": "src/config/**" },
+      { "type": "lib", "pattern": "src/lib/**" }
+    ]
+  },
+  "rules": {
+    "boundaries/no-unknown": "off",
+    "boundaries/no-unknown-files": "off",
+    "boundaries/element-types": [
+      "error",
+      {
+        "default": "disallow",
+        "message": "Layer '${file.type}' is not allowed to import layer '${dependency.type}' (enforces the app→services→domain/db/providers/crypto dependency direction).",
+        "rules": [
+          { "from": "lib", "allow": ["lib"] },
+          { "from": "config", "allow": ["config", "lib"] },
+          { "from": "domain", "allow": ["domain", "lib"] },
+          { "from": "crypto", "allow": ["crypto", "config", "lib"] },
+          { "from": "security", "allow": ["security", "crypto", "lib"] },
+          { "from": "db", "allow": ["db", "security", "crypto", "config", "lib"] },
+          { "from": "providers", "allow": ["providers", "config", "lib"] },
+          {
+            "from": "services",
+            "allow": [
+              "services",
+              "domain",
+              "db",
+              "providers",
+              "crypto",
+              "security",
+              "config",
+              "lib"
+            ]
+          },
+          { "from": "app", "allow": ["app", "services", "domain", "config", "lib"] }
+        ]
+      }
+    ]
+  },
+  "ignorePatterns": [
+    "node_modules",
+    ".next",
+    "coverage",
+    "src/db/migrations/**",
+    "scripts/**",
+    "tests/**",
+    "*.config.*"
+  ]
+}

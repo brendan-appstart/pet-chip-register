@@ -1,0 +1,58 @@
+{
+  "name": "open-pet-registry",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A free, open-source, privacy-first lost-pet microchip registry. Its only mission is reuniting lost pets with the people who love them.",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "keygen": "tsx scripts/keygen.ts",
+    "seed": "tsx scripts/seed.ts",
+    "setup": "npm run keygen && npm run db:migrate && npm run seed"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.14.0",
+    "drizzle-orm": "^0.36.4",
+    "next": "^15.1.6",
+    "nodemailer": "^6.9.16",
+    "qrcode": "^1.5.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "sharp": "^0.33.5",
+    "ulid": "^2.3.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "@types/node": "^22.10.5",
+    "@types/nodemailer": "^6.4.17",
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "@vitest/coverage-v8": "^2.1.8",
+    "drizzle-kit": "^0.28.1",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^15.1.6",
+    "eslint-import-resolver-typescript": "^3.7.0",
+    "eslint-plugin-boundaries": "^5.0.1",
+    "prettier": "^3.4.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}
