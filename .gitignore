@@ -1,0 +1,53 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+*.tsbuildinfo
+
+# production
+/build
+/dist
+
+# local databases (never commit registry data)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+/local.db*
+/data/
+
+# environment & secrets — NEVER commit real keys
+.env
+.env.local
+.env.*.local
+*.key
+/secrets/
+
+# testing
+/coverage
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# runtime dir (dev uploads, dev email outbox, e2e db)
+/var/
+
+# misc
+.DS_Store
+*.pem
+*.log
+npm-debug.log*
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+.beads-credential-key
+.beads/proxieddb/
