@@ -50,6 +50,40 @@ export function createLocalFsStorage(opts: { baseDir: string }): Storage {
 }
 
 /**
+ * Vercel Blob storage — durable object storage for serverless deployments
+ * (Vercel's ephemeral filesystem cannot persist uploads). The public blob URL
+ * returned by `put` IS the stored key, so `getUrl` returns it verbatim and no
+ * /media route is needed in production.
+ */
+export function createVercelBlobStorage(opts: { token?: string }): Storage {
+  return {
+    name: 'vercel-blob',
+    async put(key, data, o) {
+      const { put } = await import('@vercel/blob');
+      const res = await put(key, data, {
+        access: 'public',
+        contentType: o.contentType,
+        addRandomSuffix: true,
+        ...(opts.token ? { token: opts.token } : {}),
+      });
+      return { key: res.url, url: res.url };
+    },
+    async get(key) {
+      const res = await fetch(key);
+      if (!res.ok) throw new Error(`blob fetch failed: ${res.status}`);
+      return Buffer.from(await res.arrayBuffer());
+    },
+    async delete(key) {
+      const { del } = await import('@vercel/blob');
+      await del(key, opts.token ? { token: opts.token } : undefined);
+    },
+    async getUrl(key) {
+      return key; // the stored key is already the public blob URL
+    },
+  };
+}
+
+/**
  * Placeholder for an S3-compatible adapter. The interface is stable; wiring a
  * real client (e.g. @aws-sdk/client-s3 against any S3 endpoint) is a follow-up
  * that requires no changes above this layer.

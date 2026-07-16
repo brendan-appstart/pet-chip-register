@@ -6,7 +6,12 @@ import {
 } from './email';
 import { createNoopSmsProvider, type SmsProvider } from './sms';
 import { createIdentityTranslator, type Translator } from './translate';
-import { createLocalFsStorage, createS3Storage, type Storage } from './storage';
+import {
+  createLocalFsStorage,
+  createS3Storage,
+  createVercelBlobStorage,
+  type Storage,
+} from './storage';
 import { createHtmlPosterGenerator, type PosterGenerator } from './poster';
 import { createInMemoryRateLimiter, type RateLimiter } from './ratelimit';
 
@@ -54,10 +59,16 @@ export function getTranslator(): Translator {
 export function getStorage(): Storage {
   if (!storage) {
     const cfg = getConfig();
-    storage =
-      cfg.storage.provider === 's3'
-        ? createS3Storage()
-        : createLocalFsStorage({ baseDir: cfg.storage.localDir });
+    switch (cfg.storage.provider) {
+      case 'vercel-blob':
+        storage = createVercelBlobStorage({ token: cfg.storage.blobToken });
+        break;
+      case 's3':
+        storage = createS3Storage();
+        break;
+      default:
+        storage = createLocalFsStorage({ baseDir: cfg.storage.localDir });
+    }
   }
   return storage;
 }

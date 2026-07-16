@@ -15,6 +15,8 @@ export async function processAndStorePetPhoto(petId: string, input: Buffer): Pro
     .toBuffer();
 
   const key = `pets/${petId}/${newId()}.jpg`;
-  await getStorage().put(key, processed, { contentType: 'image/jpeg' });
-  return key;
+  // The provider may return a different canonical key (e.g. a Vercel Blob URL);
+  // persist whatever it returns so getUrl() resolves correctly later.
+  const stored = await getStorage().put(key, processed, { contentType: 'image/jpeg' });
+  return stored.key;
 }

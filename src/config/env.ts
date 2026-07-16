@@ -33,8 +33,9 @@ const EnvSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASSWORD: z.string().optional(),
 
-  STORAGE_PROVIDER: z.enum(['local', 's3']).default('local'),
+  STORAGE_PROVIDER: z.enum(['local', 's3', 'vercel-blob']).default('local'),
   STORAGE_LOCAL_DIR: z.string().default('./var/uploads'),
+  BLOB_READ_WRITE_TOKEN: z.string().optional(),
   S3_ENDPOINT: z.string().optional(),
   S3_REGION: z.string().default('auto'),
   S3_BUCKET: z.string().optional(),
@@ -72,8 +73,9 @@ export interface Config {
     };
   };
   readonly storage: {
-    provider: 'local' | 's3';
+    provider: 'local' | 's3' | 'vercel-blob';
     localDir: string;
+    blobToken: string | undefined;
     s3: {
       endpoint: string | undefined;
       region: string;
@@ -127,6 +129,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     storage: {
       provider: parsed.STORAGE_PROVIDER,
       localDir: parsed.STORAGE_LOCAL_DIR,
+      blobToken: parsed.BLOB_READ_WRITE_TOKEN,
       s3: {
         endpoint: parsed.S3_ENDPOINT,
         region: parsed.S3_REGION,
