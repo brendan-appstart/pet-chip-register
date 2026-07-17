@@ -150,6 +150,7 @@ export const emergencyContacts = sqliteTable(
       .references(() => pets.id),
     label: text('label'), // e.g. "Vet", "Neighbor" — non-identifying
     ...enc('pii'), // { name, phone?, email? }
+    archivedAt: integer('archived_at'), // soft-archive; null = active
     createdAt,
     updatedAt,
   },

@@ -1,4 +1,4 @@
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, count, eq, isNull } from 'drizzle-orm';
 import type { Db } from '@/db/client';
 import {
   emergencyContacts,
@@ -204,6 +204,48 @@ export async function listContactsForPet(db: Db, petId: string): Promise<Emergen
     .from(emergencyContacts)
     .where(eq(emergencyContacts.petId, petId))
     .orderBy(asc(emergencyContacts.createdAt));
+}
+
+export async function getContactById(db: Db, id: string): Promise<EmergencyContact | undefined> {
+  return (await db.select().from(emergencyContacts).where(eq(emergencyContacts.id, id)).limit(1))[0];
+}
+
+/** Count of active (non-archived) contacts — used to enforce the "keep ≥1" rule. */
+export async function countActiveContactsForPet(db: Db, petId: string): Promise<number> {
+  const rows = await db
+    .select({ c: count() })
+    .from(emergencyContacts)
+    .where(and(eq(emergencyContacts.petId, petId), isNull(emergencyContacts.archivedAt)));
+  return rows[0]?.c ?? 0;
+}
+
+export async function updateContact(
+  db: Db,
+  id: string,
+  fields: { label?: string | null; pii: EnvelopeField },
+  now: number,
+): Promise<void> {
+  await db
+    .update(emergencyContacts)
+    .set({ label: fields.label ?? null, ...toEnvelopeColumns(fields.pii), updatedAt: now })
+    .where(eq(emergencyContacts.id, id));
+}
+
+export async function setContactArchived(
+  db: Db,
+  id: string,
+  archivedAt: number | null,
+  now: number,
+): Promise<void> {
+  await db
+    .update(emergencyContacts)
+    .set({ archivedAt, updatedAt: now })
+    .where(eq(emergencyContacts.id, id));
+}
+
+export async function deleteContact(db: Db, id: string): Promise<void> {
+  // Hard delete removes the ciphertext + wrapped DEK, crypto-shredding the PII.
+  await db.delete(emergencyContacts).where(eq(emergencyContacts.id, id));
 }
 
 // --- Lost mode ---------------------------------------------------------------

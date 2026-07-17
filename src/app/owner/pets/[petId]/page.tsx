@@ -8,7 +8,11 @@ import { requireOwner } from '../../../_lib/session';
 import {
   addChipAction,
   addContactAction,
+  archiveContactAction,
+  deleteContactAction,
+  editContactAction,
   setLostModeAction,
+  unarchiveContactAction,
   updatePetAction,
   uploadPhotoAction,
 } from '../../actions';
@@ -18,6 +22,11 @@ const STATUS: Record<string, { kind: 'ok' | 'error'; msg: string }> = {
   updated: { kind: 'ok', msg: 'Details updated.' },
   chip_added: { kind: 'ok', msg: 'Microchip added.' },
   contact_added: { kind: 'ok', msg: 'Emergency contact added.' },
+  contact_updated: { kind: 'ok', msg: 'Contact updated.' },
+  contact_archived: { kind: 'ok', msg: 'Contact archived.' },
+  contact_unarchived: { kind: 'ok', msg: 'Contact restored.' },
+  contact_deleted: { kind: 'ok', msg: 'Contact deleted.' },
+  last_contact: { kind: 'error', msg: 'A pet must keep at least one emergency contact — add another before removing this one.' },
   lost_on: { kind: 'ok', msg: 'Lost Mode is ON. Print the poster and share the link below.' },
   lost_off: { kind: 'ok', msg: 'Marked as found — welcome home!' },
   photo: { kind: 'ok', msg: 'Photo updated.' },
@@ -41,6 +50,8 @@ export default async function PetDetailPage({
   if (!detail) notFound();
 
   const { pet, chips, contacts, photos, lostMode } = detail;
+  const activeContacts = contacts.filter((c) => !c.archived);
+  const archivedContacts = contacts.filter((c) => c.archived);
   const isLost = lostMode?.isLost ?? false;
   const publicUrl = `${getConfig().appUrl}/p/${pet.publicToken}`;
   const qr = await qrDataUrl(publicUrl);
@@ -211,20 +222,95 @@ export default async function PetDetailPage({
       {/* Emergency contacts */}
       <div className="card">
         <h2 style={{ marginTop: 0 }}>Emergency contacts</h2>
-        {contacts.length === 0 ? (
+        {activeContacts.length === 0 ? (
           <p className="muted">No emergency contacts yet.</p>
         ) : (
-          <ul>
-            {contacts.map((c) => (
+          <ul className="contact-list">
+            {activeContacts.map((c) => (
               <li key={c.id}>
-                <strong>{c.name}</strong>
-                {c.label ? <span className="tag" style={{ marginLeft: 8 }}>{c.label}</span> : null}
-                <div className="muted">{[c.phone, c.email].filter(Boolean).join(' · ')}</div>
+                <div>
+                  <strong>{c.name}</strong>
+                  {c.label ? <span className="tag" style={{ marginLeft: 8 }}>{c.label}</span> : null}
+                  <div className="muted">{[c.phone, c.email].filter(Boolean).join(' · ') || '—'}</div>
+                </div>
+                <div className="contact-actions">
+                  <details>
+                    <summary className="btn ghost">Edit</summary>
+                    <form action={editContactAction} className="stack" style={{ marginTop: '0.5rem' }}>
+                      <input type="hidden" name="petId" value={pet.id} />
+                      <input type="hidden" name="contactId" value={c.id} />
+                      <div className="grid two">
+                        <div className="field">
+                          <label>Name<input name="name" defaultValue={c.name} required /></label>
+                        </div>
+                        <div className="field">
+                          <label>Label<input name="label" defaultValue={c.label ?? ''} /></label>
+                        </div>
+                      </div>
+                      <div className="grid two">
+                        <div className="field">
+                          <label>Phone<input name="phone" defaultValue={c.phone ?? ''} /></label>
+                        </div>
+                        <div className="field">
+                          <label>Email<input name="email" type="email" defaultValue={c.email ?? ''} /></label>
+                        </div>
+                      </div>
+                      <button className="btn secondary" type="submit">Save contact</button>
+                    </form>
+                  </details>
+                  {activeContacts.length > 1 ? (
+                    <>
+                      <form action={archiveContactAction}>
+                        <input type="hidden" name="petId" value={pet.id} />
+                        <input type="hidden" name="contactId" value={c.id} />
+                        <button className="btn ghost" type="submit">Archive</button>
+                      </form>
+                      <form action={deleteContactAction}>
+                        <input type="hidden" name="petId" value={pet.id} />
+                        <input type="hidden" name="contactId" value={c.id} />
+                        <button className="btn ghost danger-text" type="submit">Delete</button>
+                      </form>
+                    </>
+                  ) : (
+                    <span className="muted" style={{ fontSize: '0.8rem' }}>Kept — a pet needs one contact</span>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
         )}
-        <form action={addContactAction} className="stack" style={{ marginTop: '0.5rem' }}>
+
+        {archivedContacts.length > 0 && (
+          <details style={{ marginTop: '0.75rem' }}>
+            <summary style={{ cursor: 'pointer' }} className="muted">
+              Archived contacts ({archivedContacts.length})
+            </summary>
+            <ul className="contact-list">
+              {archivedContacts.map((c) => (
+                <li key={c.id}>
+                  <div className="muted">
+                    <strong>{c.name}</strong> {c.label ? `· ${c.label}` : ''}
+                    <div>{[c.phone, c.email].filter(Boolean).join(' · ') || '—'}</div>
+                  </div>
+                  <div className="contact-actions">
+                    <form action={unarchiveContactAction}>
+                      <input type="hidden" name="petId" value={pet.id} />
+                      <input type="hidden" name="contactId" value={c.id} />
+                      <button className="btn ghost" type="submit">Restore</button>
+                    </form>
+                    <form action={deleteContactAction}>
+                      <input type="hidden" name="petId" value={pet.id} />
+                      <input type="hidden" name="contactId" value={c.id} />
+                      <button className="btn ghost danger-text" type="submit">Delete</button>
+                    </form>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
+
+        <form action={addContactAction} className="stack" style={{ marginTop: '0.75rem' }}>
           <input type="hidden" name="petId" value={pet.id} />
           <div className="grid two">
             <div className="field">

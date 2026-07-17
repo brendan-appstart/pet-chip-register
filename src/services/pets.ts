@@ -1,13 +1,16 @@
 import { getDb } from '@/db/client';
-import type { Pet } from '@/db/schema';
+import type { EmergencyContact, Pet } from '@/db/schema';
 import { getStorage } from '@/providers';
 import { getChipIndex, getEnvelopeCipher, openJson, sealJson } from '@/crypto';
 import {
   addPetPhoto,
+  countActiveContactsForPet,
   createChip,
   createContact,
   createPet,
+  deleteContact,
   findChipByHash,
+  getContactById,
   getLostMode,
   getPetById,
   isOwnerOfPet,
@@ -16,7 +19,9 @@ import {
   listContactsForPet,
   listPetPhotos,
   listPetsForOwner,
+  setContactArchived,
   setPetPhotoKey,
+  updateContact,
   updatePet,
 } from '@/db/repositories/pets';
 import { processAndStorePetPhoto } from './photos';
@@ -170,6 +175,92 @@ export async function addEmergencyContact(
   return ok({ contactId });
 }
 
+/** Verify the contact exists and belongs to a pet the owner controls. */
+async function authorizeContact(
+  ownerId: string,
+  petId: string,
+  contactId: string,
+): Promise<EmergencyContact | null> {
+  const db = getDb();
+  if (!(await isOwnerOfPet(db, ownerId, petId))) return null;
+  const contact = await getContactById(db, contactId);
+  if (!contact || contact.petId !== petId) return null;
+  return contact;
+}
+
+export async function updateEmergencyContact(
+  input: {
+    ownerId: string;
+    petId: string;
+    contactId: string;
+    label?: string;
+    name: string;
+    phone?: string;
+    email?: string;
+  } & RequestContext,
+  clock: Clock = systemClock,
+): Promise<Result<{ updated: true }, 'forbidden'>> {
+  const contact = await authorizeContact(input.ownerId, input.petId, input.contactId);
+  if (!contact) return err('forbidden');
+  const pii: ContactPii = {
+    name: input.name.trim(),
+    phone: input.phone?.trim() || undefined,
+    email: input.email?.trim() || undefined,
+  };
+  const sealed = await sealJson(getEnvelopeCipher(), pii, contactPiiAad(input.contactId));
+  await updateContact(
+    getDb(),
+    input.contactId,
+    { label: input.label?.trim() || null, pii: sealed },
+    clock.now(),
+  );
+  return ok({ updated: true });
+}
+
+/**
+ * Archive (soft-hide) a contact. The registry keeps at least one active contact
+ * once any has been entered, so archiving the last active contact is refused.
+ */
+export async function archiveEmergencyContact(
+  input: { ownerId: string; petId: string; contactId: string } & RequestContext,
+  clock: Clock = systemClock,
+): Promise<Result<{ archived: true }, 'forbidden' | 'last_contact'>> {
+  const db = getDb();
+  const contact = await authorizeContact(input.ownerId, input.petId, input.contactId);
+  if (!contact) return err('forbidden');
+  if (contact.archivedAt == null && (await countActiveContactsForPet(db, input.petId)) <= 1) {
+    return err('last_contact');
+  }
+  await setContactArchived(db, input.contactId, clock.now(), clock.now());
+  return ok({ archived: true });
+}
+
+export async function unarchiveEmergencyContact(
+  input: { ownerId: string; petId: string; contactId: string } & RequestContext,
+  clock: Clock = systemClock,
+): Promise<Result<{ unarchived: true }, 'forbidden'>> {
+  const contact = await authorizeContact(input.ownerId, input.petId, input.contactId);
+  if (!contact) return err('forbidden');
+  await setContactArchived(getDb(), input.contactId, null, clock.now());
+  return ok({ unarchived: true });
+}
+
+/** Permanently delete a contact (crypto-shreds its PII). Refuses to remove the
+ *  last active contact. Already-archived contacts can always be deleted. */
+export async function deleteEmergencyContact(
+  input: { ownerId: string; petId: string; contactId: string } & RequestContext,
+  clock: Clock = systemClock,
+): Promise<Result<{ deleted: true }, 'forbidden' | 'last_contact'>> {
+  const db = getDb();
+  const contact = await authorizeContact(input.ownerId, input.petId, input.contactId);
+  if (!contact) return err('forbidden');
+  if (contact.archivedAt == null && (await countActiveContactsForPet(db, input.petId)) <= 1) {
+    return err('last_contact');
+  }
+  await deleteContact(db, input.contactId);
+  return ok({ deleted: true });
+}
+
 export async function updatePetDetails(
   input: {
     ownerId: string;
@@ -234,6 +325,7 @@ export interface OwnerContactView {
   name: string;
   phone?: string;
   email?: string;
+  archived: boolean;
 }
 export interface OwnerPetDetail {
   pet: Pet;
@@ -269,7 +361,14 @@ export async function getOwnerPetDetail(
   const contacts: OwnerContactView[] = [];
   for (const c of contactRows) {
     const pii = await openJson<ContactPii>(cipher, fromEnvelopeColumns(c), contactPiiAad(c.id));
-    contacts.push({ id: c.id, label: c.label, name: pii.name, phone: pii.phone, email: pii.email });
+    contacts.push({
+      id: c.id,
+      label: c.label,
+      name: pii.name,
+      phone: pii.phone,
+      email: pii.email,
+      archived: c.archivedAt != null,
+    });
   }
 
   const storage = getStorage();

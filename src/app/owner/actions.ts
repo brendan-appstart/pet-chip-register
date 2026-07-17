@@ -5,7 +5,11 @@ import {
   addChipToPet,
   addEmergencyContact,
   addPetPhotos,
+  archiveEmergencyContact,
+  deleteEmergencyContact,
   registerPet,
+  unarchiveEmergencyContact,
+  updateEmergencyContact,
   updatePetDetails,
 } from '@/services/pets';
 import { setLostMode } from '@/services/lostMode';
@@ -83,6 +87,62 @@ export async function addContactAction(formData: FormData): Promise<void> {
     ...ctx,
   });
   redirect(`/owner/pets/${petId}?status=${res.ok ? 'contact_added' : res.error}`);
+}
+
+export async function editContactAction(formData: FormData): Promise<void> {
+  const owner = await requireOwner();
+  const ctx = await getRequestContext();
+  const petId = String(formData.get('petId') ?? '');
+  const res = await updateEmergencyContact({
+    ownerId: owner.id,
+    petId,
+    contactId: String(formData.get('contactId') ?? ''),
+    label: str(formData.get('label')),
+    name: String(formData.get('name') ?? '').trim(),
+    phone: str(formData.get('phone')),
+    email: str(formData.get('email')),
+    ...ctx,
+  });
+  redirect(`/owner/pets/${petId}?status=${res.ok ? 'contact_updated' : res.error}`);
+}
+
+export async function archiveContactAction(formData: FormData): Promise<void> {
+  const owner = await requireOwner();
+  const ctx = await getRequestContext();
+  const petId = String(formData.get('petId') ?? '');
+  const res = await archiveEmergencyContact({
+    ownerId: owner.id,
+    petId,
+    contactId: String(formData.get('contactId') ?? ''),
+    ...ctx,
+  });
+  redirect(`/owner/pets/${petId}?status=${res.ok ? 'contact_archived' : res.error}`);
+}
+
+export async function unarchiveContactAction(formData: FormData): Promise<void> {
+  const owner = await requireOwner();
+  const ctx = await getRequestContext();
+  const petId = String(formData.get('petId') ?? '');
+  const res = await unarchiveEmergencyContact({
+    ownerId: owner.id,
+    petId,
+    contactId: String(formData.get('contactId') ?? ''),
+    ...ctx,
+  });
+  redirect(`/owner/pets/${petId}?status=${res.ok ? 'contact_unarchived' : res.error}`);
+}
+
+export async function deleteContactAction(formData: FormData): Promise<void> {
+  const owner = await requireOwner();
+  const ctx = await getRequestContext();
+  const petId = String(formData.get('petId') ?? '');
+  const res = await deleteEmergencyContact({
+    ownerId: owner.id,
+    petId,
+    contactId: String(formData.get('contactId') ?? ''),
+    ...ctx,
+  });
+  redirect(`/owner/pets/${petId}?status=${res.ok ? 'contact_deleted' : res.error}`);
 }
 
 export async function setLostModeAction(formData: FormData): Promise<void> {

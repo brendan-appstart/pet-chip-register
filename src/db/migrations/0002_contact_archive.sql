@@ -1,0 +1,1 @@
+ALTER TABLE `emergency_contacts` ADD `archived_at` integer;
