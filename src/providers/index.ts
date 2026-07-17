@@ -14,6 +14,11 @@ import {
 } from './storage';
 import { createHtmlPosterGenerator, type PosterGenerator } from './poster';
 import { createInMemoryRateLimiter, type RateLimiter } from './ratelimit';
+import {
+  createGitHubIssueTracker,
+  createNoopIssueTracker,
+  type IssueTracker,
+} from './issues';
 
 /**
  * Provider composition root. Call sites ask for a provider by role and receive
@@ -91,9 +96,21 @@ export function getRateLimiter(): RateLimiter {
   return rateLimiter;
 }
 
+let issueTracker: IssueTracker | undefined;
+
+export function getIssueTracker(): IssueTracker {
+  if (!issueTracker) {
+    const cfg = getConfig();
+    issueTracker = cfg.issues.githubToken
+      ? createGitHubIssueTracker({ token: cfg.issues.githubToken, repo: cfg.issues.githubRepo })
+      : createNoopIssueTracker();
+  }
+  return issueTracker;
+}
+
 /** Test helper. */
 export function resetProviderCache(): void {
-  email = sms = translator = storage = poster = rateLimiter = undefined;
+  email = sms = translator = storage = poster = rateLimiter = issueTracker = undefined;
 }
 
 export type { EmailProvider, EmailMessage } from './email';
@@ -102,3 +119,4 @@ export type { Translator } from './translate';
 export type { Storage } from './storage';
 export type { PosterGenerator, PosterInput } from './poster';
 export type { RateLimiter, RateLimitPolicy, RateLimitResult } from './ratelimit';
+export type { IssueTracker, IssueSubmission } from './issues';

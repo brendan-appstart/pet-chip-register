@@ -47,6 +47,11 @@ const EnvSchema = z.object({
 
   // Comma-separated list of owner emails granted access to the /admin screen.
   ADMIN_EMAILS: z.string().default(''),
+
+  // Public "suggest a feature" form → GitHub issues (server-side token; users
+  // never log in to GitHub). If the token is unset the feature is disabled.
+  GITHUB_ISSUE_TOKEN: z.string().optional(),
+  GITHUB_ISSUE_REPO: z.string().default('brendan-appstart/pet-chip-register'),
 });
 
 export interface Config {
@@ -87,6 +92,7 @@ export interface Config {
   };
   readonly rateLimiter: 'memory' | 'db';
   readonly adminEmails: string[];
+  readonly issues: { githubToken: string | undefined; githubRepo: string };
 }
 
 /** Collect every `OPR_KEK_<id>` entry (excluding the ACTIVE_ID pointer). */
@@ -143,6 +149,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     adminEmails: parsed.ADMIN_EMAILS.split(',')
       .map((e) => e.trim().toLowerCase())
       .filter((e) => e !== ''),
+    issues: { githubToken: parsed.GITHUB_ISSUE_TOKEN, githubRepo: parsed.GITHUB_ISSUE_REPO },
   };
 
   assertProductionSafety(config);
