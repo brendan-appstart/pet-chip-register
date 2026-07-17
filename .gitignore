@@ -51,3 +51,5 @@ npm-debug.log*
 .dolt/
 .beads-credential-key
 .beads/proxieddb/
+.vercel
+.env*
