@@ -1,0 +1,1 @@
+{"id":"int-cfd7fb8b426bfaa5b05dcf4f537541b2","kind":"field_change","created_at":"2026-07-17T00:34:26.439278Z","actor":"BrendanP","issue_id":"open-pet-registry-mfs","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Added next-screen guidance banner on /owner/pets/new; typecheck+lint+build green"}}

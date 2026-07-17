@@ -20,6 +20,11 @@ export default async function NewPetPage({
     <div className="card" style={{ maxWidth: '40rem' }}>
       <h1>Register a pet</h1>
       <p className="muted">Only a name and species are required. You can add the rest any time.</p>
+      <div className="banner ok" style={{ marginBottom: '1rem' }}>
+        <strong>Next:</strong> after you register, you&apos;ll land on {`your pet's`} page where you
+        can add photos, microchip numbers, and emergency contacts, download a QR tag, and turn on
+        Lost Mode.
+      </div>
       {error && (
         <div className="banner error" role="alert">
           {ERRORS[error] ?? 'Something went wrong. Please try again.'}
