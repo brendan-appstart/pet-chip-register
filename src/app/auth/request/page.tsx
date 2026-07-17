@@ -1,3 +1,4 @@
+import { oauthGoogleEnabled } from '@/services/oauth';
 import { requestMagicLinkAction } from '../actions';
 
 export const metadata = { title: 'Sign in — Open Pet Registry' };
@@ -8,6 +9,7 @@ export default async function RequestPage({
   searchParams: Promise<{ sent?: string; error?: string }>;
 }) {
   const { sent, error } = await searchParams;
+  const googleEnabled = oauthGoogleEnabled();
 
   if (sent) {
     return (
@@ -39,6 +41,27 @@ export default async function RequestPage({
         <div className="banner error" role="alert">
           Too many requests. Please wait a few minutes and try again.
         </div>
+      )}
+      {error === 'oauth' && (
+        <div className="banner error" role="alert">
+          Google sign-in didn&apos;t complete. Please try again.
+        </div>
+      )}
+      {error === 'email_unverified' && (
+        <div className="banner error" role="alert">
+          Your Google email isn&apos;t verified, so we can&apos;t sign you in with it. Try the email
+          link instead.
+        </div>
+      )}
+      {googleEnabled && (
+        <>
+          <a href="/auth/google" className="btn secondary" style={{ width: '100%', justifyContent: 'center', marginTop: '1rem' }}>
+            Continue with Google
+          </a>
+          <p className="muted" style={{ textAlign: 'center', margin: '1rem 0 0' }}>
+            or use your email
+          </p>
+        </>
       )}
       <form action={requestMagicLinkAction} className="stack" style={{ marginTop: '1rem' }}>
         <div className="field">

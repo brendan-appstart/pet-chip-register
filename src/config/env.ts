@@ -52,6 +52,11 @@ const EnvSchema = z.object({
   // never log in to GitHub). If the token is unset the feature is disabled.
   GITHUB_ISSUE_TOKEN: z.string().optional(),
   GITHUB_ISSUE_REPO: z.string().default('brendan-appstart/pet-chip-register'),
+
+  // Google OAuth sign-in. Both must be set to enable the "Continue with Google"
+  // button; otherwise only magic-link sign-in is offered.
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
 });
 
 export interface Config {
@@ -93,6 +98,7 @@ export interface Config {
   readonly rateLimiter: 'memory' | 'db';
   readonly adminEmails: string[];
   readonly issues: { githubToken: string | undefined; githubRepo: string };
+  readonly oauth: { googleClientId: string | undefined; googleClientSecret: string | undefined };
 }
 
 /** Collect every `OPR_KEK_<id>` entry (excluding the ACTIVE_ID pointer). */
@@ -150,6 +156,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       .map((e) => e.trim().toLowerCase())
       .filter((e) => e !== ''),
     issues: { githubToken: parsed.GITHUB_ISSUE_TOKEN, githubRepo: parsed.GITHUB_ISSUE_REPO },
+    oauth: {
+      googleClientId: parsed.GOOGLE_CLIENT_ID,
+      googleClientSecret: parsed.GOOGLE_CLIENT_SECRET,
+    },
   };
 
   assertProductionSafety(config);

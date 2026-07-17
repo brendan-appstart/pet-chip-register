@@ -161,6 +161,63 @@ export async function verifyMagicLink(
   return ok({ ownerId: owner.id, sessionToken, expiresAt });
 }
 
+/**
+ * Sign in (or sign up) an owner from an externally-verified email — used by
+ * OAuth. Keyed by the same email blind index as magic-link, so a person using
+ * Google and a magic link with the same address maps to one account.
+ */
+export async function signInWithVerifiedEmail(
+  input: { email: string; method: string } & RequestContext,
+  clock: Clock = systemClock,
+): Promise<Result<{ ownerId: string; sessionToken: string; expiresAt: number }, 'invalid_email'>> {
+  const email = normalizeEmail(input.email);
+  if (!isValidEmail(email)) return err('invalid_email');
+
+  const db = getDb();
+  const now = clock.now();
+  const emailHash = getEmailIndex().compute(email);
+
+  let owner = await findOwnerByEmailHash(db, emailHash);
+  if (!owner) {
+    const ownerId = newId();
+    const pii = await sealJson<OwnerPii>(getEnvelopeCipher(), { email }, ownerPiiAad(ownerId));
+    await createOwner(db, {
+      id: ownerId,
+      emailLookupHash: emailHash,
+      emailLastDomain: emailDomain(email),
+      pii,
+      now,
+    });
+    owner = await getOwnerById(db, ownerId);
+  }
+  if (!owner) return err('invalid_email');
+
+  const sessionToken = newOpaqueToken();
+  const expiresAt = now + SESSION_TTL_MS;
+  await createSession(db, {
+    id: newId(),
+    sessionTokenHash: hashToken(sessionToken),
+    ownerId: owner.id,
+    now,
+    expiresAt,
+    userAgentHash: input.userAgentHash ?? null,
+    ipHash: input.ipHash ?? null,
+  });
+
+  await appendAudit(db, {
+    actorType: 'owner',
+    actorId: owner.id,
+    action: 'LOGIN',
+    entityType: 'owner',
+    entityId: owner.id,
+    ipHash: input.ipHash ?? null,
+    metadata: { method: input.method },
+    occurredAt: now,
+  });
+
+  return ok({ ownerId: owner.id, sessionToken, expiresAt });
+}
+
 /** Resolve the owner for a session cookie, or null if invalid/expired/revoked. */
 export async function resolveSession(
   sessionToken: string | undefined,

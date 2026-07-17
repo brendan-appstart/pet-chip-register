@@ -19,6 +19,11 @@ import {
   createNoopIssueTracker,
   type IssueTracker,
 } from './issues';
+import {
+  createDisabledOAuthProvider,
+  createGoogleOAuthProvider,
+  type OAuthProvider,
+} from './oauth';
 
 /**
  * Provider composition root. Call sites ask for a provider by role and receive
@@ -108,9 +113,23 @@ export function getIssueTracker(): IssueTracker {
   return issueTracker;
 }
 
+let oauthProvider: OAuthProvider | undefined;
+
+export function getOAuthProvider(): OAuthProvider {
+  if (!oauthProvider) {
+    const { googleClientId, googleClientSecret } = getConfig().oauth;
+    oauthProvider =
+      googleClientId && googleClientSecret
+        ? createGoogleOAuthProvider({ clientId: googleClientId, clientSecret: googleClientSecret })
+        : createDisabledOAuthProvider();
+  }
+  return oauthProvider;
+}
+
 /** Test helper. */
 export function resetProviderCache(): void {
   email = sms = translator = storage = poster = rateLimiter = issueTracker = undefined;
+  oauthProvider = undefined;
 }
 
 export type { EmailProvider, EmailMessage } from './email';
@@ -120,3 +139,4 @@ export type { Storage } from './storage';
 export type { PosterGenerator, PosterInput } from './poster';
 export type { RateLimiter, RateLimitPolicy, RateLimitResult } from './ratelimit';
 export type { IssueTracker, IssueSubmission } from './issues';
+export type { OAuthProvider, OAuthUserInfo } from './oauth';
