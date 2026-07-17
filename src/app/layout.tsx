@@ -54,7 +54,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <div className="container">
             Free pet-reunification infrastructure. Your information is encrypted and never sold —
             the goal is pets reunited, not revenue.{' '}
-            <Link href="/technical">Technical details</Link>.
+            <Link href="/faq">FAQ</Link> · <Link href="/technical">Technical details</Link>.
           </div>
         </footer>
       </body>

@@ -420,6 +420,22 @@ main {
 .btn.danger-text {
   color: var(--accent);
 }
+.faq-item {
+  border-bottom: 1px solid var(--line);
+}
+.faq-item:last-child {
+  border-bottom: 0;
+}
+.faq-item > summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0.85rem 0;
+  list-style: revert;
+}
+.faq-answer {
+  padding: 0 0 0.85rem;
+  line-height: 1.6;
+}
 .skip-link {
   position: absolute;
   left: -999px;
