@@ -22,7 +22,7 @@ export default function HomePage() {
             </Link>
           </div>
           <p className="hero-note">
-            🔒 Encrypted owner data · 🐾 Always free to reunite · 🌍 Yours to self-host
+            🔒 Your details stay encrypted · 🐾 Always free to reunite · 💌 Instant owner alerts
           </p>
         </div>
         <div className="hero-media">
@@ -65,9 +65,9 @@ export default function HomePage() {
         <h2>Built to last, built to trust</h2>
         <ul className="muted">
           <li>Core reunification features are free forever.</li>
-          <li>Open-source software; private, encrypted data.</li>
-          <li>No vendor lock-in — self-host it anywhere, own your registry.</li>
-          <li>Designed to outlive any single company or maintainer.</li>
+          <li>Your personal information is encrypted and never sold.</li>
+          <li>One trusted registry, run for the pets — not for profit.</li>
+          <li>Designed to keep working for decades.</li>
         </ul>
       </section>
     </div>

@@ -52,8 +52,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </main>
         <footer className="site-footer">
           <div className="container">
-            Free &amp; open-source pet-reunification infrastructure. Owner data is encrypted at rest
-            and never sold. The success metric is pets reunited — not revenue.
+            Free pet-reunification infrastructure. Your information is encrypted and never sold —
+            the goal is pets reunited, not revenue.{' '}
+            <Link href="/technical">Technical details</Link>.
           </div>
         </footer>
       </body>
